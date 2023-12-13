@@ -3,7 +3,7 @@
 -- RyanT, fixed an annoying bug JMW and I couldn't fix, selection menu
 -- minerobber, fixed a minor selection menu bug, fixed a bug that occured from fs.combine
 
-local ver = "v2.0-release.2"
+local ver = "v2.1-release.1"
 
 local expect = require "cc.expect".expect
 
@@ -842,13 +842,18 @@ elseif selection == "Launch VM" then
     for _,_ in ipairs(vmname) do
         table.insert(vmdesc,1,"Load VM")
     end
-
+    table.insert(vmname, #vmname+1, "Back")
+    table.insert(vmdesc, #vmdesc+1, "Back")
     local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, vmdesc[1])
     PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
     PrimeUI.selectionBox(term.current(), 4, 6, 40, 8, vmname, "done", function(option) redraw(vmdesc[option]) end)
     local _, _, selection = PrimeUI.run()
-    dofile("virtualconfig/"..selection.."/config.lua")
-    virfold = selection
+    if selection == "Back" then
+        mainUI()
+    else
+        dofile("virtualconfig/"..selection.."/config.lua")
+        virfold = selection
+    end
 elseif selection == "Config menu" then
     vms = fs.list("/virtualmachines")
     local vmname = {}
@@ -860,20 +865,26 @@ elseif selection == "Config menu" then
     for _,_ in ipairs(vmname) do
         table.insert(vmdesc,1,"Config VM")
     end
-
+    table.insert(vmname, #vmname+1, "Back")
+    table.insert(vmdesc, #vmdesc+1, "Back")
     local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, vmdesc[1])
     PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
     PrimeUI.selectionBox(term.current(), 4, 6, 40, 8, vmname, "done", function(option) redraw(vmdesc[option]) end)
     local _, _, selection = PrimeUI.run()
-
+    if selection == "Back" then
+        mainUI()
+    end
     local configname = {
-        "Edit ID"
+        "Edit ID",
+        "List data"
     }
 
     local configdesc = {
-        "Edit the computer's ID"
+        "Edit the computer's ID",
+        "List config data"
     }
-    
+    table.insert(configname, #configname+1, "Back")
+    table.insert(configdesc, #configdesc+1, "Back")
     PrimeUI.clear()
     local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, configdesc[1])
     PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
@@ -888,6 +899,27 @@ elseif selection == "Config menu" then
 	    local _, _, textnewID = PrimeUI.run()
 
         _G.textnewID = tonumber(textnewID)
+    elseif selection2 == "Back" then
+        mainUI()
+    elseif selection2 == "List data" then
+        PrimeUI.clear()
+        clear()
+        dofile("virtualconfig/"..selection.."/config.lua")
+        if filelaunch then
+            iftruelaunch = "seagull launchfile: "..filelaunch
+        else
+            iftruelaunch = "No seagull launchfile"
+        end
+
+        local textdata = "ID: "..textnewID.."\n"..iftruelaunch
+        
+        PrimeUI.borderBox(term.current(), 4, 6, 40, 10)
+        local scroller = PrimeUI.scrollBox(term.current(), 4, 6, 40, 10, 9000, true, true)
+        PrimeUI.drawText(scroller, textdata, true)
+        PrimeUI.button(term.current(), 3, 18, "Done", "done")
+        PrimeUI.keyAction(keys.enter, "done")
+        PrimeUI.run()
+        mainUI()
     end
 
     local configdata = fs.open("virtualconfig/"..selection.."/config.lua", "w")
@@ -906,15 +938,19 @@ elseif selection == "Delete VM" then
     for _,_ in ipairs(vmname) do
         table.insert(vmdesc,1,"Config VM")
     end
-
+    table.insert(vmname, #vmname+1, "Back")
+    table.insert(vmdesc, #vmdesc+1, "Back")
     local redraw = PrimeUI.textBox(term.current(), 3, 15, 40, 3, vmdesc[1])
     PrimeUI.borderBox(term.current(), 4, 6, 40, 8)
     PrimeUI.selectionBox(term.current(), 4, 6, 40, 8, vmname, "done", function(option) redraw(vmdesc[option]) end)
     local _, _, selection = PrimeUI.run()
-
-    fs.delete("virtualmachines/"..selection)
-    fs.delete("virtualconfig/"..selection)
-    mainUI()
+    if selection == "Back" then
+        mainUI()
+    else
+        fs.delete("virtualmachines/"..selection)
+        fs.delete("virtualconfig/"..selection)
+        mainUI()
+    end
 end
 end
 mainUI()
@@ -1413,6 +1449,8 @@ for functionName, func in pairs(fs) do
         print("")
     end
 end
+
+debug.protect(os.getComputerID)
 
 sleep(2)
 
